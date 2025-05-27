@@ -1,1 +1,11 @@
 # AI_final
+## intro
+THis is the final project form AI 2025, NTU CSIE:
+following is file description:
+* v1/2/3&4.py : each version of final project's test result, see detail [here](https://docs.google.com/spreadsheets/d/1mRxqmu4xJbp-S1nUJGqFsXGhO7F7piEEUoOud6WOX68/edit?usp=sharing).
+* threshold_test.py : to change probability into binary, with given threshold variable. 
+* rule_build.py : for given .json files, turn them into three json file: law_text, legal_phrases and violation_phrase_map
+* filter.pt : if have multiple keys for output, this file can help change into kaggle competion's format.
+## Using step:
+* python3 v1/2/3&4.py
+* python3 threshold_test.py
