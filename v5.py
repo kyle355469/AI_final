@@ -78,69 +78,61 @@ DB_PATH = "./final_project_db"
 #     )
 #     return json.loads(chat.summary)
 
-def w_RAG(ad_type: str, keywords: list[str]) -> dict:
-    # ======== Step 1: Load and Split JSON files =========
+embedding = OpenAIEmbeddings(model="text-embedding-3-small")
+
+def build_vectordb():
     json_paths = [
-        ("data/law.json", "law"),
-        ("data/legal.json", "legal"),
-        ("data/illegal.json", "illegal")
+        ("data/law_texts.json", "law"),
+        ("data/legal_phrases.json", "legal"),
+        ("data/violation_phrase_map.json", "illegal")
     ]
-    all_docs = []
 
     splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
+    all_docs = []
 
-    for path in json_paths:
-        loader = JSONLoader(file_path=path, jq_schema=".[]", text_content=False)  # 讀取 JSON 每一筆
+    for path, tag in json_paths:
+        loader = JSONLoader(file_path=path, jq_schema=".[]", text_content=False)
         pages = loader.load()
-        pages = [
-            Document(page.page_content, metadata={"source": tag})
-            for page in pages
-        ]
-        docs = splitter.split_documents(pages)
-        all_docs.extend(docs)
 
-    # ======== Step 2: Embedding with OpenAI =========
-    embedding = OpenAIEmbeddings(model="text-embedding-3-small")
+        for page in pages:
+            content = page.page_content
+            metadata = {"source": tag}
+            
+            if len(content) > 300:  # 條文才切
+                chunks = splitter.split_text(content)
+                all_docs += [Document(page_content=chunk, metadata=metadata) for chunk in chunks]
+            else:
+                all_docs.append(Document(page_content=content, metadata=metadata))
 
-    vectordb = Chroma.from_documents(documents=all_docs, embedding=embedding, persist_directory=DB_PATH)
-    retriever = vectordb.as_retriever()
+    vectordb = Chroma.from_documents(all_docs, embedding=embedding, persist_directory=DB_PATH)
+    vectordb.persist()
 
-    # ======== Step 3: RAG Chain =========
-    system_prompt = (
-        "請根據下列 context 回答問題。"
-        "你是條文查找助理，輸入是一句廣告詞與其類型，請從提供的合法/違法關鍵字中列出和廣告關鍵字有相關的違法/合法關鍵詞與相關的條文，並輸出為："
-        "{{\"violation_sample\": [\"<sample 1>\", \"<sample 2>\", ...], \"legal_sample\": [\"<legal sample 1>\", \"<legal sample 2>\", ...], \"law\": [\"<law 1>\", \"<law 2>\", ...], \"ad_type\": \"<類型>\"}}"
-        "Context: {context}"
-    )
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", system_prompt),
-        ("human", "{input}"),
-    ])
+def w_RAG(ad_type: str, keywords: list[str]) -> dict:
+    vectordb = Chroma(persist_directory=DB_PATH, embedding_function=OpenAIEmbeddings(model="text-embedding-3-small"))
+    retriever = vectordb.as_retriever(search_kwargs={"k": 15})
 
-    llm = ChatOpenAI(model="gpt-4", temperature=0)
+    query_text = " ".join(keywords)
+    docs = retriever.get_relevant_documents(query_text)
 
-    question_answer_chain = create_stuff_documents_chain(llm=llm, prompt=prompt)
-    chain = create_retrieval_chain(retriever=retriever, combine_docs_chain=question_answer_chain)
+    result = {
+        "violation_sample": [],
+        "legal_sample": [],
+        "law": [],
+        "ad_type": ad_type
+    }
 
-    # ======== Step 4: 提問 =========
-    QUERY = f"本產品聲稱: {keywords}，請提供相關關鍵字和條文"
-    relevant_docs = chain.invoke({"input": QUERY})["context"]  # context 文件會包含 metadata
-
-    violation_sample = []
-    legal_sample = []
-    law_sample = []
-
-    for doc in relevant_docs:
-        content = doc.page_content.strip()
+    for doc in docs:
         source = doc.metadata.get("source", "")
-        
+        content = doc.page_content.strip()
+
         if source == "illegal":
-            violation_sample.append(content)
+            result["violation_sample"].append(content)
         elif source == "legal":
-            legal_sample.append(content)
+            result["legal_sample"].append(content)
         elif source == "law":
-            law_sample.append(content)
-    print(violation_sample, legal_sample, law_sample)
+            result["law"].append(content)
+    print(result)
+    return result
 
 # ─── Utility Agent Factory ───
 def build_agent(name, msg):
@@ -263,4 +255,11 @@ def main():
     
 
 if __name__ == "__main__":
+    # first time run to build the vector database
+    if not os.path.exists(DB_PATH):
+        os.makedirs(DB_PATH)
+        build_vectordb()
+        print("✅ Vector database built successfully.")
+    else:
+        print("⚠️ Vector database already exists, skipping build.")
     main()
