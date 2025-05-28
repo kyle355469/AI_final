@@ -16,6 +16,8 @@ violation_sources = [
     "衛生福利部暨臺北市政府衛生局健康食品廣告例句83.json",
     "中藥成藥不適當共通性廣告詞句.json",
     "化妝品涉及影響生理機能或改變身體結構之詞句.json",
+    "中醫藥司之中藥成藥效能、適應症語意解析及中藥廣告違規態樣釋例彙編.json",
+    "13項保健功效及不適當功效延申例句之參考.json",
 ]
 illegal_phrases = set()
 for file in violation_sources:

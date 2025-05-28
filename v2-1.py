@@ -157,8 +157,8 @@ ConversableAgent.initiate_chats = lambda self, seq: run_chat_sequence(self, seq)
 
 # ─── MAIN ENTRY ───
 def main():
-    #df = pd.read_csv("final_project_query.csv")
-    df = pd.read_csv("test.csv")
+    df = pd.read_csv("final_project_query.csv")
+    #df = pd.read_csv("test.csv")
     results: List[dict] = []
 
     for key, row in df.iterrows():
