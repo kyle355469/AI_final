@@ -13,3 +13,6 @@ following is file description:
 * pip install -r requirement.txt
 * python3 v1/2/3&4.py
 * python3 threshold_test.py
+
+## Notice
+* in each version of code's main(), df means the query now use, so change to whether customized query you want.
