@@ -110,9 +110,9 @@ def main():
                 # {"recipient": FETCH_AGENT, "message": "請判斷下列廣告類型：{ad_text}", "summary_method": "last_msg", "max_turns": 1},
                 {"recipient": EXTRACT_AGENT, "message": "給我以下廣告的所有功效關鍵字：{ad_text}", "summary_method": "last_msg", "max_turns": 1},
                 {"recipient": FINDER_AGENT, "message": "輸入廣告關鍵字：{keywords}\n, 參考用違法關鍵字：{illegal_phrases}, 參考用合法關鍵字：{legal_phrases}", "summary_method": "last_msg", "max_turns": 1},
-                {"recipient": JUDGER_AGENT, "message": "{{\"廣告關鍵字\": {keywords}}}, {{\"參考用\": {extract_ref}}}", "summary_method": "last_msg", "max_turns": 1},
+                {"recipient": JUDGER_AGENT, "message": "{{\"廣告關鍵字\": {keywords}}}, {{\"條文\": {law_text}}}, {{\"參考用\": {extract_ref}}}", "summary_method": "last_msg", "max_turns": 1},
                 #{"recipient": JUDGER_AGENT, "message": "{{\"廣告關鍵字\": {keywords}}}, 參考用違法字：{illegal_phrases}, 參考用合法字：{legal_phrases}", "summary_method": "last_msg", "max_turns": 1},
-                {"recipient": SCORE_AGENT, "message": "{{\"is_legal\": {final_judgement}}}, {{\"條文\": {law_text}}}", "summary_method": "last_msg", "max_turns": 1}
+                {"recipient": SCORE_AGENT, "message": "{{\"is_legal\": {final_judgement}}}", "summary_method": "last_msg", "max_turns": 1}
             ]
             res = ENTRY.initiate_chats(chat_sequence)
             results.append({
