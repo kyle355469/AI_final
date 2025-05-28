@@ -7,5 +7,6 @@ following is file description:
 * rule_build.py : for given .json files, turn them into three json file: law_text, legal_phrases and violation_phrase_map
 * filter.pt : if have multiple keys for output, this file can help change into kaggle competion's format.
 ## Using step:
+* pip install -r requirement.txt
 * python3 v1/2/3&4.py
 * python3 threshold_test.py
