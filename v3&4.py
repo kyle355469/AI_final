@@ -33,7 +33,6 @@ EXTRACT_AGENT = build_agent(
     
 )
 
-## 換成 REG
 FINDER_AGENT = build_agent(
     "law_finder_agent",
     "你是違規條文查找助理，輸入是一句廣告詞與其類型，請列出和館鋼關鍵字有相關的違法/合法關鍵詞，並輸出為："

@@ -31,7 +31,7 @@ for file in violation_sources:
                     #reason = case.get("violation_type") or "違規但無分類"
                     if phrase:
                         illegal_phrases.add(phrase.strip())
-                        # violation_phrase_map[phrase.strip()] = reason
+                        #violation_phrase_map[phrase.strip()] = reason
 
 # === 2. 法條整理 ===
 law_texts = set()

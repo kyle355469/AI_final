@@ -175,3 +175,6 @@ cython_debug/
 
 # result files
 *.csv
+
+# db dir
+final_project_db/
