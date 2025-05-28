@@ -34,7 +34,7 @@ for file in violation_sources:
                         # violation_phrase_map[phrase.strip()] = reason
 
 # === 2. 法條整理 ===
-law_texts = {}
+law_texts = set()
 law_sources = [
     "食品安全衛生管理法.json",
     "化粧品衛生管理法.json",
@@ -46,12 +46,17 @@ for file in law_sources:
         continue
     with open(path, "r", encoding="utf-8") as f:
         data = json.load(f)
-        for k, v in data.items():
-            if isinstance(v, list):
-                for clause in v:
-                    content = clause.get("內容") or clause.get("content")
+        for category in data.get("categories", []):
+            for subcategory in category.get("subcategories", []):
+                for case in subcategory.get("cases", []):
+                    content = case.get("content")
                     if content:
-                        law_texts[f"{k}"] = content
+                        law_texts.add(content.strip())
+            for case in category.get("cases", []):
+                content = case.get("content") or case.get("內容")
+                if content:
+                    law_texts.add(content.strip())
+                    
 
 # === 3. 合法用語 ===
 legal_phrases = set()
@@ -73,10 +78,10 @@ if legal_path.exists():
 # === 4. 儲存三個結果 ===
 with open(OUTPUT_DIR / "violation_phrase_map.json", "w", encoding="utf-8") as f:
     #json.dump(violation_phrase_map, f, ensure_ascii=False, indent=2)
-    json.dump( sorted(list(legal_phrases)), f, ensure_ascii=False, indent=2)
+    json.dump( sorted(list(illegal_phrases)), f, ensure_ascii=False, indent=2)
 
 with open(OUTPUT_DIR / "law_texts.json", "w", encoding="utf-8") as f:
-    json.dump(law_texts, f, ensure_ascii=False, indent=2)
+    json.dump(sorted(list(law_texts)), f, ensure_ascii=False, indent=2)
 
 with open(OUTPUT_DIR / "legal_phrases.json", "w", encoding="utf-8") as f:
     json.dump(sorted(list(legal_phrases)), f, ensure_ascii=False, indent=2)
