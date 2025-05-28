@@ -30,7 +30,6 @@ embedding = OpenAIEmbeddings(model="text-embedding-3-small")
 
 def build_vectordb():
     json_paths = [
-        ("data/law_texts.json", "law"),
         ("data/legal_phrases.json", "legal"),
         ("data/violation_phrase_map.json", "illegal")
     ]
@@ -65,7 +64,6 @@ def w_RAG(ad_type: str, keywords: list[str]) -> dict:
     result = {
         "violation_sample": [],
         "legal_sample": [],
-        "law": [],
         "ad_type": ad_type
     }
 
@@ -77,8 +75,6 @@ def w_RAG(ad_type: str, keywords: list[str]) -> dict:
             result["violation_sample"].append(content)
         elif source == "legal":
             result["legal_sample"].append(content)
-        elif source == "law":
-            result["law"].append(content)
     print(result)
     return result
 
@@ -109,11 +105,21 @@ EXTRACT_AGENT = build_agent(
 JUDGER_AGENT = build_agent(
     "judger_agent",
     "你是一位法律判定助理，根據 finder_agent 提供的資料和條文，請判斷此廣告是否違法，並解釋原因"
+    "只有當廣告描述與違法範例一致時才保證非法，但不一致也不保證合法，請根據法條自行判斷語境"
+    "以下為法律內容："
+    "健康食品之標示或廣告，不得涉及醫療效能之內容。"
+    "化粧品之標示、宣傳及廣告內容，不得有虛偽或誇大之情事。"
+    "本法所稱醫療器材廣告，指利用傳播方法，宣傳醫療效能，以達招徠銷售醫療器材為目的之行為。採訪、報導或宣傳之內容暗示或影射醫療器材之醫療效能，以達招徠銷售醫療器材為目的者，視為醫療器材廣告。"
+    "第46條規定：非醫療器材，不得為醫療效能之標示或宣傳。但其他法律另有規定者，不在此限。"
+    "藥物廣告不得以左列方式為之：一、假借他人名義為宣傳者。二、利用書刊資料保證其效能或性能。三、藉採訪或報導為宣傳。四、以其他不正當方式為宣傳。"
+    "非醫療器材商不得為醫療器材廣告。"
+    "食品、食品添加物、食品用洗滌劑及經中央主管機關公告之食品器具、食品容器或包裝，其標示、宣傳或廣告不得涉及醫療效能。"
 )
 
 SCORE_AGENT = build_agent(
     "score_agent",
     "你是一位收集助理，根據 judger_agent 的輸出，請輸出此廣告違法的機率，數字介於 0.00 ~ 1.00 之間。不要解釋，只提供數字"
+    "若遇到無法判斷合法或非法，請輸出 0.52"
 )
 
 ENTRY = build_agent("entry", "主控協調者")
@@ -166,8 +172,8 @@ ConversableAgent.initiate_chats = lambda self, seq: run_chat_sequence(self, seq)
 
 # ─── MAIN ENTRY ───
 def main():
-    df = pd.read_csv("final_project_query.csv")
-    #df = pd.read_csv("test.csv")
+    #df = pd.read_csv("final_project_query.csv")
+    df = pd.read_csv("test.csv")
     results: List[dict] = []
 
     for key, row in df.iterrows():
