@@ -1,6 +1,6 @@
 import pandas as pd
 
-THRESHOLD = 0.8
+THRESHOLD = 0.3
 
 # 讀取原始 CSV
 df = pd.read_csv("ad_legality_judgement_by_agent.csv")  # 修改為你的檔名

@@ -1,5 +1,3 @@
-## v5
-
 from __future__ import annotations
 from autogen import ConversableAgent
 import os, sys, json, ast, pandas as pd
@@ -23,6 +21,7 @@ if not OPENAI_API_KEY:
 LLM_CFG = {"config_list": [{"model": "gpt-4o-mini", "api_key": OPENAI_API_KEY}]}
 
 # ─── DATA SETUP ───
+
 DB_PATH = "./final_project_db"
 
 # ─── RAG ───
@@ -30,8 +29,6 @@ embedding = OpenAIEmbeddings(model="text-embedding-3-small")
 
 def build_vectordb():
     json_paths = [
-        ("data/law_texts.json", "law"),
-        ("data/legal_phrases.json", "legal"),
         ("data/violation_phrase_map.json", "illegal")
     ]
 
@@ -64,8 +61,6 @@ def w_RAG(ad_type: str, keywords: list[str]) -> dict:
 
     result = {
         "violation_sample": [],
-        "legal_sample": [],
-        "law": [],
         "ad_type": ad_type
     }
 
@@ -75,10 +70,6 @@ def w_RAG(ad_type: str, keywords: list[str]) -> dict:
 
         if source == "illegal":
             result["violation_sample"].append(content)
-        elif source == "legal":
-            result["legal_sample"].append(content)
-        elif source == "law":
-            result["law"].append(content)
     print(result)
     return result
 
@@ -96,19 +87,19 @@ FETCH_AGENT = build_agent(
 EXTRACT_AGENT = build_agent(
     "extract_agent",
     "你是一位廣告關鍵字提取助理，請從輸入的廣告文字中只提取關於功效關鍵字，並輸出為：{\"keywords\": [\"<關鍵字1>\", \"<關鍵字2>\", ...]}"
+    
 )
 
-## 換成 RAG
 # FINDER_AGENT = build_agent(
 #     "law_finder_agent",
-#     "你是條文查找助理，輸入是一句廣告詞與其類型，請從提供的合法/違法關鍵字中列出和廣告關鍵字有相關的違法/合法關鍵詞與相關的條文，並輸出為："
-#     "{\"violation_sample\": [\"<sample 1>\", \"<sample 2>\", ...], \"legal_sample\": [\"<legal sample 1>\", \"<legal sample 2>\", ...], \"law\": [\"<law 1>\", \"<law 2>\", ...], \"ad_type\": \"<類型>\"}"
+#     "你是違規條文查找助理，輸入是一句廣告詞與其類型，請根據給予的違反關鍵字列出和本廣告相關的違規例句，並輸出為："
+#     "{\"violation_sample\": [\"<sample 1>\", \"<sample 2>\", ...]}"
 #     "不可以在輸出中提到 json"
 # )
 
 JUDGER_AGENT = build_agent(
     "judger_agent",
-    "你是一位法律判定助理，根據 finder_agent 提供的資料和條文，請判斷此廣告是否違法，並解釋原因"
+    "你是一位法律判定助理，根據 extract_agent 的輸出，請判斷此廣告是否違法，另外附上finder_agent 提供的已知違法關鍵字，並解釋原因"
 )
 
 SCORE_AGENT = build_agent(
@@ -139,24 +130,24 @@ def run_chat_sequence(entry: ConversableAgent, sequence: list[dict]) -> str:
                     ctx["ad_type"] = data["ad_type"]
                     break
                 except:
-                    check = 1
                     print(f"Error parsing data: {past['content']}")
+                    check = 1
                     continue
         elif step["recipient"] is EXTRACT_AGENT:
             try:
                 ctx["keywords"] = json.loads(out).get("keywords", [])
             except:
                 print(f"Error parsing keywords: {out}")
-                exit()
-
+                
             if check:
                 ctx["extract_ref"] = w_RAG(ad_type="unknown", keywords=ctx["keywords"])
             else:
                 ctx["extract_ref"] = w_RAG(ad_type=ctx["ad_type"], keywords=ctx["keywords"])
-
+                
+        # elif step["recipient"] is FINDER_AGENT:
+        #     ctx["is_legal"] = (json.loads(out))
         elif step["recipient"] is JUDGER_AGENT:
             ctx["final_judgement"] = out
-
         elif step["recipient"] is SCORE_AGENT:
             ctx["final_judgement"] = out.strip()
     return ctx
@@ -166,45 +157,37 @@ ConversableAgent.initiate_chats = lambda self, seq: run_chat_sequence(self, seq)
 
 # ─── MAIN ENTRY ───
 def main():
-    df = pd.read_csv("final_project_query.csv")
-    #df = pd.read_csv("test.csv")
+    #df = pd.read_csv("final_project_query.csv")
+    df = pd.read_csv("test.csv")
     results: List[dict] = []
 
     for key, row in df.iterrows():
         
         ENTRY._initiate_chats_ctx = {"ad_text": str(row[1]).strip()}
-        # try:
-        chat_sequence = [
-            {"recipient": FETCH_AGENT, "message": "請判斷下列廣告類型：{ad_text}", "summary_method": "last_msg", "max_turns": 1},
-            {"recipient": EXTRACT_AGENT, "message": "給我以下廣告的所有功效關鍵字：{ad_text}", "summary_method": "last_msg", "max_turns": 1},
-            #{"recipient": FINDER_AGENT, "message": "輸入廣告關鍵字：{keywords}\n, 參考用違法關鍵字：{illegal_phrases}, 參考用合法關鍵字：{legal_phrases}, {{\"條文\": {law_text}}}", "summary_method": "last_msg", "max_turns": 1},
-            {"recipient": JUDGER_AGENT, "message": "{{\"廣告關鍵字\": {keywords}}},  {{\"參考用\": {extract_ref}}}", "summary_method": "last_msg", "max_turns": 1},
-            #{"recipient": JUDGER_AGENT, "message": "{{\"廣告關鍵字\": {keywords}}}, 參考用違法字：{illegal_phrases}, 參考用合法字：{legal_phrases}", "summary_method": "last_msg", "max_turns": 1},
-            {"recipient": SCORE_AGENT, "message": "{{\"is_legal\": {final_judgement}}}", "summary_method": "last_msg", "max_turns": 1}
-        ]
-        res = ENTRY.initiate_chats(chat_sequence)
-        results.append({
-            "ID": str(int(row[0]) - 1),
-            # "ad_type": res.get("ad_type", ""),
-            "Answer": str(res["final_judgement"]),
-            # "matched_phrase": res.get("matched_phrase", ""),
-            # "violation_reason": res.get("violation_reason", ""),
-            # "law_reference": res.get("law_reference", "")
-        })
-        # except Exception as e:
-        #     print("error: ", e)
-        #     results.append({"ID": str(int(row[0]) - 1), "Answer": 0})
+        try:
+            chat_sequence = [
+                {"recipient": FETCH_AGENT, "message": "請判斷下列廣告類型：{ad_text}", "summary_method": "last_msg", "max_turns": 1},
+                {"recipient": EXTRACT_AGENT, "message": "給我以下廣告的所有功效關鍵字：{ad_text}", "summary_method": "last_msg", "max_turns": 1},
+                #{"recipient": FINDER_AGENT, "message": "輸入廣告：{ad_text}\n類型：{ad_type}, 比對用法關鍵字：{illegal_phrases}", "summary_method": "last_msg", "max_turns": 1},
+                {"recipient": JUDGER_AGENT, "message": "{{\"關鍵字\": {keywords}}}, {{\"參考用\": {extract_ref}}}", "summary_method": "last_msg", "max_turns": 1},
+                {"recipient": SCORE_AGENT, "message": "{{\"is_legal\": {final_judgement}}}", "summary_method": "last_msg", "max_turns": 1}
+            ]
+            res = ENTRY.initiate_chats(chat_sequence)
+            results.append({
+                "ID": str(int(row[0]) - 1),
+                # "ad_type": res.get("ad_type", ""),
+                "Answer": str(res["final_judgement"]),
+                # "matched_phrase": res.get("matched_phrase", ""),
+                # "violation_reason": res.get("violation_reason", ""),
+                # "law_reference": res.get("law_reference", "")
+            })
+        except Exception as e:
+            print("error: ", e)
+            results.append({"query": str(int(row[0]) - 1), "Answer": 0})
 
     pd.DataFrame(results).to_csv("ad_legality_judgement_by_agent.csv", index=False)
     print("✅ 判定完成，結果輸出至 ad_legality_judgement_by_agent.csv")
     
 
 if __name__ == "__main__":
-    # first time run to build the vector database
-    if not os.path.exists(DB_PATH):
-        os.makedirs(DB_PATH)
-        build_vectordb()
-        print("✅ Vector database built successfully.")
-    else:
-        print("⚠️ Vector database already exists, skipping build.")
     main()
