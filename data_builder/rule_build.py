@@ -3,10 +3,10 @@ import os
 from pathlib import Path
 
 # 原始檔案資料夾
-SOURCE_DIR = Path("sample")
+SOURCE_DIR = Path("../sample")
 
 # 輸出資料夾
-OUTPUT_DIR = Path("data")
+OUTPUT_DIR = Path("../data")
 OUTPUT_DIR.mkdir(exist_ok=True)
 
 # === 1. 違規語句收集 ===
@@ -62,20 +62,27 @@ for file in law_sources:
 
 # === 3. 合法用語 ===
 legal_phrases = set()
-legal_path = SOURCE_DIR / "食品及相關產品標示宣傳廣告涉及不實誇張易生誤解或醫療效能認定準則-可用詞句.json"
-if legal_path.exists():
-    with open(legal_path, "r", encoding="utf-8") as f:
-        data = json.load(f)
-        for category in data.get("categories", []):
-            for subcategory in category.get("subcategories", []):
-                for case in subcategory.get("cases", []):
+law_sources = [
+    "食品及相關產品標示宣傳廣告涉及不實誇張易生誤解或醫療效能認定準則-可用詞句.json"
+    "食品藥品健康食品得使用詞句補充案例.json",
+]
+for file in law_sources:
+    legal_path = SOURCE_DIR / file
+    if not path.exists():
+        continue
+    if legal_path.exists():
+        with open(legal_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            for category in data.get("categories", []):
+                for subcategory in category.get("subcategories", []):
+                    for case in subcategory.get("cases", []):
+                        phrase = case.get("ad_content")
+                        if phrase:
+                            legal_phrases.add(phrase.strip())
+                for case in category.get("cases", []):
                     phrase = case.get("ad_content")
                     if phrase:
                         legal_phrases.add(phrase.strip())
-            for case in category.get("cases", []):
-                phrase = case.get("ad_content")
-                if phrase:
-                    legal_phrases.add(phrase.strip())
 
 # === 4. 儲存三個結果 ===
 with open(OUTPUT_DIR / "violation_phrase_map.json", "w", encoding="utf-8") as f:

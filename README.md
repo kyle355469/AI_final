@@ -7,12 +7,23 @@ for project detail please look at [here](https://docs.google.com/presentation/d/
 following is file description:
 * each version of main code (v1 / v2 / v2-1 / v3&4 / v5 ) : each version of final project's test result, see detail [here](https://docs.google.com/spreadsheets/d/1mRxqmu4xJbp-S1nUJGqFsXGhO7F7piEEUoOud6WOX68/edit?usp=sharing).
 * threshold_test.py : to change probability into binary, with given threshold variable. 
-* rule_build.py : for given .json files, turn them into three json file: law_text, legal_phrases and violation_phrase_map
+* ~~rule_build.py : for given .json files, turn them into three json file: law_text, legal_phrases and violation_phrase_map~~
+    * now use the builder in data_builder/
 * filter.pt : if have multiple keys for output, this file can help change into kaggle competion's format.
+
 ## Using step:
 * pip install -r requirement.txt
+* ./data_builder/run.sh
 * python3 v1/2/3&4.py
 * python3 threshold_test.py
 
 ## Notice
 * in each version of code's main(), df means the query now use, so change to whether customized query you want.
+
+
+## Log
+* 5/25 start build the project
+* 5/26 attempt v1 ~ v4
+* 5/27 attempt v5 & v2-1
+* 5/28 build phrases
+* 5/29 build phrases

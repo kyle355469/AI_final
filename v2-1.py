@@ -29,7 +29,7 @@ embedding = OpenAIEmbeddings(model="text-embedding-3-small")
 
 def build_vectordb():
     json_paths = [
-        ("data/violation_phrase_map.json", "illegal")
+        ("data/illegal_phrases.json", "illegal")
     ]
 
     splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)

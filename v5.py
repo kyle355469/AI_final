@@ -31,7 +31,7 @@ embedding = OpenAIEmbeddings(model="text-embedding-3-small")
 def build_vectordb():
     json_paths = [
         ("data/legal_phrases.json", "legal"),
-        ("data/violation_phrase_map.json", "illegal")
+        ("data/illegal_phrases.json", "illegal")
     ]
 
     splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
@@ -91,7 +91,7 @@ FETCH_AGENT = build_agent(
 
 EXTRACT_AGENT = build_agent(
     "extract_agent",
-    "你是一位廣告關鍵字提取助理，請從輸入的廣告文字中只提取關於功效關鍵字，並輸出為：{\"keywords\": [\"<關鍵字1>\", \"<關鍵字2>\", ...]}"
+    "你是一位廣告關鍵字提取助理，請從輸入的廣告文字中提取關於功效的關鍵語句，並輸出為：{\"keywords\": [\"<關鍵句1>\", \"<關鍵句2>\", ...]}"
 )
 
 ## 換成 RAG
@@ -105,7 +105,9 @@ EXTRACT_AGENT = build_agent(
 JUDGER_AGENT = build_agent(
     "judger_agent",
     "你是一位法律判定助理，根據 finder_agent 提供的資料和條文，請判斷此廣告是否違法，並解釋原因"
+    "只需要考慮提供的關鍵字，不需要考慮該廣告可能還會有其他描述"
     "只有當廣告描述與違法範例一致時才保證非法，但不一致也不保證合法，請根據法條自行判斷語境"
+    "你需要做出具體判斷"
     "以下為法律內容："
     "健康食品之標示或廣告，不得涉及醫療效能之內容。"
     "化粧品之標示、宣傳及廣告內容，不得有虛偽或誇大之情事。"
@@ -177,14 +179,14 @@ def main():
     results: List[dict] = []
 
     for key, row in df.iterrows():
-        
+        print(f"Processing ID: {row[0]}")
         ENTRY._initiate_chats_ctx = {"ad_text": str(row[1]).strip()}
         # try:
         chat_sequence = [
             {"recipient": FETCH_AGENT, "message": "請判斷下列廣告類型：{ad_text}", "summary_method": "last_msg", "max_turns": 1},
             {"recipient": EXTRACT_AGENT, "message": "給我以下廣告的所有功效關鍵字：{ad_text}", "summary_method": "last_msg", "max_turns": 1},
             #{"recipient": FINDER_AGENT, "message": "輸入廣告關鍵字：{keywords}\n, 參考用違法關鍵字：{illegal_phrases}, 參考用合法關鍵字：{legal_phrases}, {{\"條文\": {law_text}}}", "summary_method": "last_msg", "max_turns": 1},
-            {"recipient": JUDGER_AGENT, "message": "{{\"廣告關鍵字\": {keywords}}},  {{\"參考用\": {extract_ref}}}", "summary_method": "last_msg", "max_turns": 1},
+            {"recipient": JUDGER_AGENT, "message": "{{\"廣告類型\": {ad_type}}}, {{\"廣告關鍵字\": {keywords}}},  {{\"參考用\": {extract_ref}}}", "summary_method": "last_msg", "max_turns": 1},
             #{"recipient": JUDGER_AGENT, "message": "{{\"廣告關鍵字\": {keywords}}}, 參考用違法字：{illegal_phrases}, 參考用合法字：{legal_phrases}", "summary_method": "last_msg", "max_turns": 1},
             {"recipient": SCORE_AGENT, "message": "{{\"is_legal\": {final_judgement}}}", "summary_method": "last_msg", "max_turns": 1}
         ]

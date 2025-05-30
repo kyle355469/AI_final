@@ -11,7 +11,7 @@ if not OPENAI_API_KEY:
 LLM_CFG = {"config_list": [{"model": "gpt-4o-mini", "api_key": OPENAI_API_KEY}]}
 
 # ─── DATA SETUP ───
-with open("data/violation_phrase_map.json", "r", encoding="utf-8") as f:
+with open("data/illegal_phrases.json", "r", encoding="utf-8") as f:
     VIOLATION_PHRASE_MAP = json.load(f)
 with open("data/legal_phrases.json", "r", encoding="utf-8") as f:
     LEGAL_PHRASES = json.load(f)
