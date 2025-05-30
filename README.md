@@ -9,7 +9,7 @@ following is file description:
 * threshold_test.py : to change probability into binary, with given threshold variable. 
 * ~~rule_build.py : for given .json files, turn them into three json file: law_text, legal_phrases and violation_phrase_map~~
     * now use the builder in data_builder/
-* filter.pt : if have multiple keys for output, this file can help change into kaggle competion's format.
+* filter.py : if have multiple keys for output, this file can help change into kaggle competion's format.
 
 ## Using step:
 * pip install -r requirement.txt
