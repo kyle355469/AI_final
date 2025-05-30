@@ -1,4 +1,9 @@
 # AI_final
+## TODO:
+* retest each version with new data.
+* change the mapping of data -> because RAG only get value but key
+    * or fix it inside the RAG function.
+    
 ## intro
 THis is the final project form AI 2025, NTU CSIE:
 
@@ -32,7 +37,3 @@ following is file description:
 * 5/28 build phrases
 * 5/29 build phrases
 
-## TODO:
-* retest each version with new data.
-* change the mapping of data -> because RAG only get value but key
-    * or fix it inside the RAG function.
