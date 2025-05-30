@@ -23,7 +23,7 @@ if not OPENAI_API_KEY:
 LLM_CFG = {"config_list": [{"model": "gpt-4o-mini", "api_key": OPENAI_API_KEY}]}
 
 # ─── DATA SETUP ───
-DB_PATH = "./final_project_db"
+DB_PATH = "./final_project_db_v5"
 
 # ─── RAG ───
 embedding = OpenAIEmbeddings(model="text-embedding-3-small")
@@ -67,14 +67,26 @@ def w_RAG(ad_type: str, keywords: list[str]) -> dict:
         "ad_type": ad_type
     }
 
+    # for doc in docs:
+    #     source = doc.metadata.get("source", "")
+    #     content = doc.page_content.strip()
+
+    #     if source == "illegal":
+    #         result["violation_sample"].append(content)
+    #     elif source == "legal":
+    #         result["legal_sample"].append(content)
     for doc in docs:
         source = doc.metadata.get("source", "")
-        content = doc.page_content.strip()
+        try:
+            parsed = json.loads(doc.page_content)
+        except json.JSONDecodeError:
+            continue  # 如果不是合法 JSON 就跳過
 
-        if source == "illegal":
-            result["violation_sample"].append(content)
-        elif source == "legal":
-            result["legal_sample"].append(content)
+        for k, v in parsed.items():
+            if source == "illegal":
+                result["violation_sample"].append({k: v})
+            elif source == "legal":
+                result["legal_sample"].append({k: v})
     print(result)
     return result
 

@@ -22,7 +22,7 @@ LLM_CFG = {"config_list": [{"model": "gpt-4o-mini", "api_key": OPENAI_API_KEY}]}
 
 # ─── DATA SETUP ───
 
-DB_PATH = "./final_project_db"
+DB_PATH = "./final_project_db_v2-1"
 
 # ─── RAG ───
 embedding = OpenAIEmbeddings(model="text-embedding-3-small")

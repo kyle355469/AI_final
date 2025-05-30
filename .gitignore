@@ -177,4 +177,5 @@ cython_debug/
 *.csv
 
 # db dir
-final_project_db/
+final_project_db_v2-1/
+final_project_db_v5/
