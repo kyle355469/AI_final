@@ -10,6 +10,10 @@ following is file description:
 * ~~rule_build.py : for given .json files, turn them into three json file: law_text, legal_phrases and violation_phrase_map~~
     * now use the builder in data_builder/
 * filter.py : if have multiple keys for output, this file can help change into kaggle competion's format.
+* data/
+    * legal/illegal_phrases.json : only phrases.
+    * legal/illegal_phrases_map.json : map the reason with phrases.
+
 
 ## Using step:
 * pip install -r requirement.txt
@@ -27,3 +31,8 @@ following is file description:
 * 5/27 attempt v5 & v2-1
 * 5/28 build phrases
 * 5/29 build phrases
+
+## TODO:
+* retest each version with new data.
+* change the mapping of data -> because RAG only get value but key
+    * or fix it inside the RAG function.
